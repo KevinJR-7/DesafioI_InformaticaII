@@ -1,0 +1,119 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+
+
+\title{Informe de Análisis y Diseño\\Desafío 1 - Informática II\\Semestre 2025-1}
+\author{Benjamin Ruiz Guarin\\Kevin Jimenez Rincón}
+
+\lstset{
+  language=C++,
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  frame=single,
+  breaklines=true,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{orange},
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Análisis del problema}
+
+El desafío plantea un problema de ingeniería inversa donde se debe recuperar una imagen original que ha sido distorsionada mediante una serie de transformaciones bit a bit (como rotaciones, desplazamientos y operaciones XOR), seguidas por operaciones de enmascaramiento con una máscara de color.
+
+No se conoce el orden de las transformaciones. Solo se dispone de:
+\begin{itemize}
+  \item La imagen final distorsionada (ID).
+  \item Una imagen aleatoria (IM) que puede haber sido usada en operaciones XOR.
+  \item Una máscara M (más pequeña que la imagen original).
+  \item Archivos \texttt{.txt} con desplazamientos y valores enmascarados.
+\end{itemize}
+
+El reto es descubrir el orden de las transformaciones, revertirlas, y recuperar la imagen original.
+
+\section{Diseño de la solución}
+
+El enfoque propuesto se basa en:
+
+\begin{enumerate}
+  \item Leer la imagen distorsionada (ID), la IM y la máscara M.
+  \item Leer los archivos de enmascaramiento (M1.txt, M2.txt, ...), para extraer el desplazamiento y las sumas RGB.
+  \item Implementar funciones para las transformaciones bit a bit:
+  \begin{itemize}
+    \item Operación XOR: \texttt{resultado[i] = img1[i] \^{} img2[i]}
+    \item Rotación de bits (izquierda/derecha)
+    \item Desplazamiento de bits
+  \end{itemize}
+  \item Verificar cada paso aplicando el enmascaramiento y comparando los resultados con los archivos .txt.
+  \item Probar diferentes órdenes de transformaciones para encontrar la secuencia correcta.
+  \item Una vez hallado el orden, aplicar las transformaciones inversas para obtener la imagen original.
+\end{enumerate}
+
+\section{Esquema de tareas}
+
+\begin{itemize}[label=\faIcon{code}]
+  \item Leer imágenes BMP y convertir a arreglo RGB (punteros). 
+  \item Leer archivos \texttt{.txt} y extraer datos.
+  \item Implementar operaciones bit a bit (XOR, rotación, desplazamiento).
+  \item Simular el enmascaramiento y verificar resultados.
+  \item Implementar lógica para deducir el orden de transformaciones.
+  \item Invertir las transformaciones para reconstruir la imagen.
+  \item Documentar el código y preparar presentación.
+\end{itemize}
+
+
+\section{Desarrollo del trabajo}
+
+Dado el nivel de complejidad del problema, es fundamental adoptar una estrategia altamente organizada. Al tratarse de un trabajo colaborativo, se optó por un enfoque modular, en el que cada operación y tarea se implementa como una función independiente. Esta estructura permite trabajar de forma paralela y distribuir responsabilidades.
+
+La idea es desarrollar primero todas las funciones necesarias —lectura de imágenes, operaciones bit a bit, enmascaramiento, verificación, etc.— de manera aislada y probada. Una vez que estas piezas estén completas y validadas, se integrarán en la lógica central que deduce el orden correcto de transformaciones aplicadas a la imagen final.
+
+Además, cada módulo será acompañado de funciones de prueba unitarias para validar su funcionamiento con casos controlados antes de ser integrados al sistema principal.
+
+
+
+\subsection*{Distribución de tareas}
+
+A continuación, se presenta la asignación de tareas según los módulos definidos:
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Responsable} & \textbf{Funcion} \\
+\hline
+Benjamin Ruiz & Lectura y escritura de archivos BMP, almacenamiento en arreglos dinámicos. Implementación del módulo de exportación de imágenes. \\
+\hline
+Kevin Jimenez & Implementación de operaciones bit a bit (XOR, rotaciones, desplazamientos) con punteros y validación de resultados. \\
+\hline
+Kevin Jimenez y Benjamin Ruiz & Lectura y análisis de archivos de enmascaramiento (\texttt{.txt}), y verificación con máscara M. Desarrollo del verificador de enmascaramiento. \\
+\hline
+Kevin Jimenez y Benjamin Ruiz & Diseño e implementación del algoritmo de búsqueda del orden correcto de transformaciones. Integración de módulos y pruebas finales. \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection*{Metodología de trabajo}
+
+Se utilizará un repositorio en Github para facilitar el control de versiones, y se realizarán commits regulares por cada avance funcional. Cada integrante probará sus funciones de manera independiente y dejará documentación mínima sobre su uso en el código.
+
+
+\end{document}
