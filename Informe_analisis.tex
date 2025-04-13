@@ -38,9 +38,9 @@
 
 \section{Análisis del problema}
 
-El desafío plantea un problema de ingeniería inversa donde se debe recuperar una imagen original que ha sido distorsionada mediante una serie de transformaciones bit a bit (como rotaciones, desplazamientos y operaciones XOR), seguidas por operaciones de enmascaramiento con una máscara de color.
+El desafío consta de un problema de ingeniería inversa en el cual debemos recuperar una imagen original que fue distorsionada mediante transformaciones bit a bit (como rotaciones, desplazamientos y operaciones XOR), y operaciones de enmascaramiento con una máscara de color.
 
-No se conoce el orden de las transformaciones. Solo se dispone de:
+No se conoce el orden de las transformaciones. Solo tenemos:
 \begin{itemize}
   \item La imagen final distorsionada (ID).
   \item Una imagen aleatoria (IM) que puede haber sido usada en operaciones XOR.
@@ -52,7 +52,7 @@ El reto es descubrir el orden de las transformaciones, revertirlas, y recuperar 
 
 \section{Diseño de la solución}
 
-El enfoque propuesto se basa en:
+El enfoque que tomaremos es:
 
 \begin{enumerate}
   \item Leer la imagen distorsionada (ID), la IM y la máscara M.
@@ -83,11 +83,11 @@ El enfoque propuesto se basa en:
 
 \section{Desarrollo del trabajo}
 
-Dado el nivel de complejidad del problema, es fundamental adoptar una estrategia altamente organizada. Al tratarse de un trabajo colaborativo, se optó por un enfoque modular, en el que cada operación y tarea se implementa como una función independiente. Esta estructura permite trabajar de forma paralela y distribuir responsabilidades.
+Dado el nivel de complejidad del problema, es importante buscar una estrategia altamente organizada. Ya que el trabajo es en equipo, se decidió tomar un enfoque modular, dividiendo las tareas en funciones independientes. De esta forma podemos trabajar de forma paralela y repartir las responsabilidades.
 
-La idea es desarrollar primero todas las funciones necesarias —lectura de imágenes, operaciones bit a bit, enmascaramiento, verificación, etc.— de manera aislada y probada. Una vez que estas piezas estén completas y validadas, se integrarán en la lógica central que deduce el orden correcto de transformaciones aplicadas a la imagen final.
+La idea es desarrollar primero todas las funciones necesarias —lectura de imágenes, operaciones bit a bit, enmascaramiento, verificación, etc.— de manera aislada y probada. Una vez que estas piezas estén completas y validadas, se unen en la lógica central que deduce el orden correcto de transformaciones aplicadas a la imagen final.
 
-Además, cada módulo será acompañado de funciones de prueba unitarias para validar su funcionamiento con casos controlados antes de ser integrados al sistema principal.
+Además, cada módulo será acompañado de funciones de prueba para probar su funcionamiento con casos controlados antes de ser integrados al sistema general.
 
 
 
@@ -117,3 +117,4 @@ Se utilizará un repositorio en Github para facilitar el control de versiones, y
 
 
 \end{document}
+
