@@ -35,17 +35,19 @@
 #include <iostream>
 #include <QCoreApplication>
 #include <QImage>
+#include <QFile>
 
 using namespace std;
 unsigned char* loadPixels(QString input, int &width, int &height);
 bool exportImage(unsigned char* pixelData, int width,int height, QString archivoSalida);
 unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixels);
+bool compareImages(unsigned char* img1, unsigned char* img2, int width, int height);
 
 int main()
 {
     // Definición de rutas de archivo de entrada (imagen original) y salida (imagen modificada)
-    QString archivoEntrada = "I_O.bmp";
-    QString archivoSalida = "I_D.bmp";
+    QString archivoEntrada = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Caso 2/I_O.bmp";
+    QString archivoSalida = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Code/I_D.bmp";
 
     // Variables para almacenar las dimensiones de la imagen
     int height = 0;
@@ -54,13 +56,6 @@ int main()
     // Carga la imagen BMP en memoria dinámica y obtiene ancho y alto
     unsigned char *pixelData = loadPixels(archivoEntrada, width, height);
 
-    // Simula una modificación de la imagen asignando valores RGB incrementales
-    // (Esto es solo un ejemplo de manipulación artificial)
-    for (int i = 0; i < width * height * 3; i += 3) {
-        pixelData[i] = i;     // Canal rojo
-        pixelData[i + 1] = i; // Canal verde
-        pixelData[i + 2] = i; // Canal azul
-    }
 
     // Exporta la imagen modificada a un nuevo archivo BMP
     bool exportI = exportImage(pixelData, width, height, archivoSalida);
@@ -94,45 +89,47 @@ int main()
     }
 
     return 0; // Fin del programa
+
 }
 
-
-unsigned char* loadPixels(QString input, int &width, int &height){
-/*
- * @brief Carga una imagen BMP desde un archivo y extrae los datos de píxeles en formato RGB.
- *
- * Esta función utiliza la clase QImage de Qt para abrir una imagen en formato BMP, convertirla al
- * formato RGB888 (24 bits: 8 bits por canal), y copiar sus datos de píxeles a un arreglo dinámico
- * de tipo unsigned char. El arreglo contendrá los valores de los canales Rojo, Verde y Azul (R, G, B)
- * de cada píxel de la imagen, sin rellenos (padding).
- *
- * @param input Ruta del archivo de imagen BMP a cargar (tipo QString).
- * @param width Parámetro de salida que contendrá el ancho de la imagen cargada (en píxeles).
- * @param height Parámetro de salida que contendrá la altura de la imagen cargada (en píxeles).
- * @return Puntero a un arreglo dinámico que contiene los datos de los píxeles en formato RGB.
- *         Devuelve nullptr si la imagen no pudo cargarse.
- *
- * @note Es responsabilidad del usuario liberar la memoria asignada al arreglo devuelto usando `delete[]`.
+/**
+ * @brief loadPixels
+ * 
+ * @param input 
+ * @param width 
+ * @param height 
+ * @return unsigned* 
  */
 
-    // Cargar la imagen BMP desde el archivo especificado (usando Qt)
+unsigned char* loadPixels(QString input, int &width, int &height) {
+
+    // Cargar la imagen BMP desde el archivo especificado
     QImage imagen(input);
 
     // Verifica si la imagen fue cargada correctamente
     if (imagen.isNull()) {
-        cout << "Error: No se pudo cargar la imagen BMP." << std::endl;
-        return nullptr; // Retorna un puntero nulo si la carga falló
+        cout << "Error: No se pudo cargar la imagen desde " << input.toStdString() << endl;
+        return nullptr;
     }
 
     // Convierte la imagen al formato RGB888 (3 canales de 8 bits sin transparencia)
     imagen = imagen.convertToFormat(QImage::Format_RGB888);
+    if (imagen.format() != QImage::Format_RGB888) {
+        cout << "Error: No se pudo convertir la imagen al formato RGB888." << endl;
+        return nullptr;
+    }
 
     // Obtiene el ancho y el alto de la imagen cargada
     width = imagen.width();
     height = imagen.height();
+    cout << "Dimensiones de la imagen: " << width << "x" << height << endl;
 
     // Calcula el tamaño total de datos (3 bytes por píxel: R, G, B)
     int dataSize = width * height * 3;
+    if (dataSize <= 0) {
+        cout << "Error: Tamaño de datos inválido: " << dataSize << endl;
+        return nullptr;
+    }
 
     // Reserva memoria dinámica para almacenar los valores RGB de cada píxel
     unsigned char* pixelData = new unsigned char[dataSize];
@@ -144,12 +141,11 @@ unsigned char* loadPixels(QString input, int &width, int &height){
         memcpy(dstLine, srcLine, width * 3);                    // Copia los píxeles RGB de esa línea (sin padding)
     }
 
-    // Retorna el puntero al arreglo de datos de píxeles cargado en memoria
+    cout << "Imagen cargada correctamente desde: " << input.toStdString() << endl;
     return pixelData;
 }
 
-bool exportImage(unsigned char* pixelData, int width,int height, QString archivoSalida){
-/*
+/** 
  * @brief Exporta una imagen en formato BMP a partir de un arreglo de píxeles en formato RGB.
  *
  * Esta función crea una imagen de tipo QImage utilizando los datos contenidos en el arreglo dinámico
@@ -167,6 +163,8 @@ bool exportImage(unsigned char* pixelData, int width,int height, QString archivo
  *
  * @note La función no libera la memoria del arreglo pixelData; esta responsabilidad recae en el usuario.
  */
+bool exportImage(unsigned char* pixelData, int width,int height, QString archivoSalida){
+
 
     // Crear una nueva imagen de salida con el mismo tamaño que la original
     // usando el formato RGB888 (3 bytes por píxel, sin canal alfa)
@@ -193,9 +191,8 @@ bool exportImage(unsigned char* pixelData, int width,int height, QString archivo
 
 }
 
-unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixels){
-/*
- * @brief Carga la semilla y los resultados del enmascaramiento desde un archivo de texto.
+/**
+ *  @brief Carga la semilla y los resultados del enmascaramiento desde un archivo de texto.
  *
  * Esta función abre un archivo de texto que contiene una semilla en la primera línea y,
  * a continuación, una lista de valores RGB resultantes del proceso de enmascaramiento.
@@ -212,6 +209,8 @@ unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixel
  *
  * @note Es responsabilidad del usuario liberar la memoria reservada con delete[].
  */
+unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixels){
+
 
     // Abrir el archivo que contiene la semilla y los valores RGB
     ifstream archivo(nombreArchivo);
@@ -269,14 +268,38 @@ unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixel
 }
 
 
+//Operacion XOR entre dos imágenes
+void XORImg(unsigned char *img1, unsigned char *img2, unsigned char *result, int size) {
+    for (int i = 0; i < size; ++i) {
+        resultado[i] = img1[i] ^ img2[i];
+    }
+}
 
 
+//Rotar bits derecha o izquierda
+unsigned char* Rotate(unsigned char *img, int size, int bits, bool direction) {
+    if (img == nullptr || size <= 0) return nullptr;
 
+    unsigned char* resultado = new unsigned char[size];
 
+    for (int i = 0; i < size; ++i) {
+        if (direction) {
+            resultado[i] = (img[i] << bits) | (img[i] >> (8 - bits));
+        } else {
+            resultado[i] = (img[i] >> bits) | (img[i] << (8 - bits));
+        }
+    }
 
+    return resultado;
+}
 
-
-
-
-
-
+//Comparar dos imágenes
+bool compareImages(unsigned char *img1, unsigned char *img2, int width, int height) {
+    int size = width * height * 3; // 3 bytes por píxel (RGB)
+    for (int i = 0; i < size; ++i) {
+        if (img1[i] != img2[i]) {
+            return false; // Las imágenes son diferentes
+        }
+    }
+    return true; // Las imágenes son iguales
+}
