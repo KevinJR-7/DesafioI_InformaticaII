@@ -46,8 +46,8 @@ bool compareImages(unsigned char* img1, unsigned char* img2, int width, int heig
 int main()
 {
     // Definición de rutas de archivo de entrada (imagen original) y salida (imagen modificada)
-    QString archivoEntrada = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Caso 2/I_O.bmp";
-    QString archivoSalida = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Code/I_D.bmp";
+    QString archivoEntrada = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Caso 2/I_D.bmp";
+    QString archivoSalida = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Code/I_O.bmp";
 
     // Variables para almacenar las dimensiones de la imagen
     int height = 0;
@@ -269,15 +269,18 @@ unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixel
 
 
 //Operacion XOR entre dos imágenes
-void XORImg(unsigned char *img1, unsigned char *img2, unsigned char *result, int size) {
+unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size) {
+    unsigned char* result = new unsigned char[size];
     for (int i = 0; i < size; ++i) {
-        resultado[i] = img1[i] ^ img2[i];
+        result[i] = img1[i] ^ img2[i];
     }
+
+    return result;
 }
 
 
 //Rotar bits derecha o izquierda
-unsigned char* Rotate(unsigned char *img, int size, int bits, bool direction) {
+unsigned char* RotateBits(unsigned char *img, int size, int bits, bool direction) {
     if (img == nullptr || size <= 0) return nullptr;
 
     unsigned char* resultado = new unsigned char[size];
@@ -302,4 +305,21 @@ bool compareImages(unsigned char *img1, unsigned char *img2, int width, int heig
         }
     }
     return true; // Las imágenes son iguales
+}
+
+//desplazar bits
+unsigned char* ShiftBits(unsigned char *img, int size, int bits, bool direction) {
+    if (img == nullptr || size <= 0) return nullptr;
+
+    unsigned char* resultado = new unsigned char[size];
+
+    for (int i = 0; i < size; ++i) {
+        if (direction) {
+            resultado[i] = img[i] << bits;
+        } else {
+            resultado[i] = img[i] >> bits;
+        }
+    }
+
+    return resultado;
 }
