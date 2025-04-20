@@ -42,55 +42,84 @@
  bool exportImage(unsigned char* pixelData, int width,int height, QString archivoSalida);
  unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixels);
  bool compareImages(unsigned char* img1, unsigned char* img2, int width, int height);
+ unsigned char* ShiftBits(unsigned char *img, int size, int bits, bool direction);
+ unsigned char* RotateBits(unsigned char *img, int size, int bits, bool direction);
+ unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size);
+ bool verifyMasking(unsigned char* transformedImage, unsigned char* mask, int maskWidth, int maskHeight, int seed, const unsigned int* maskingData, int n_pixels);
+
  
- int main()
- {
-     // Definición de rutas de archivo de entrada (imagen original) y salida (imagen modificada)
-     QString archivoEntrada = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Caso 2/I_D.bmp";
-     QString archivoSalida = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica II/DesafioI_InformaticaII/DesafíoI/Code/I_O.bmp";
- 
-     // Variables para almacenar las dimensiones de la imagen
-     int height = 0;
-     int width = 0;
- 
-     // Carga la imagen BMP en memoria dinámica y obtiene ancho y alto
-     unsigned char *pixelData = loadPixels(archivoEntrada, width, height);
- 
- 
-     // Exporta la imagen modificada a un nuevo archivo BMP
-     bool exportI = exportImage(pixelData, width, height, archivoSalida);
- 
-     // Muestra si la exportación fue exitosa (true o false)
-     cout << exportI << endl;
- 
-     // Libera la memoria usada para los píxeles
-     delete[] pixelData;
-     pixelData = nullptr;
- 
-     // Variables para almacenar la semilla y el número de píxeles leídos del archivo de enmascaramiento
-     int seed = 0;
-     int n_pixels = 0;
- 
-     // Carga los datos de enmascaramiento desde un archivo .txt (semilla + valores RGB)
-     unsigned int *maskingData = loadSeedMasking("M1.txt", seed, n_pixels);
- 
-     // Muestra en consola los primeros valores RGB leídos desde el archivo de enmascaramiento
-     for (int i = 0; i < n_pixels * 3; i += 3) {
-         cout << "Pixel " << i / 3 << ": ("
-              << maskingData[i] << ", "
-              << maskingData[i + 1] << ", "
-              << maskingData[i + 2] << ")" << endl;
-     }
- 
-     // Libera la memoria usada para los datos de enmascaramiento
-     if (maskingData != nullptr){
-         delete[] maskingData;
-         maskingData = nullptr;
-     }
- 
-     return 0; // Fin del programa
- 
- }
+ int main() {
+    // Rutas de las imágenes y archivos
+    QString archivoIO = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/I_O.bmp";
+    QString archivoIM = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/I_M.bmp";
+    QString archivoM = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/M.bmp";
+    QString archivoP1Ref = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/P1.bmp";
+    QString archivoP2Ref = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/P2.bmp";
+    QString archivoP3Ref = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/I_D.bmp";
+
+    // Variables para dimensiones
+    int widthIO = 0, heightIO = 0;
+    int widthIM = 0, heightIM = 0;
+    int widthM = 0, heightM = 0;
+
+    // Cargar las imágenes IO, IM y la máscara M
+    unsigned char* IO = loadPixels(archivoIO, widthIO, heightIO);
+    unsigned char* IM = loadPixels(archivoIM, widthIM, heightIM);
+    unsigned char* M = loadPixels(archivoM, widthM, heightM);
+
+    if (!IO || !IM || !M) {
+        cout << "Error al cargar las imágenes." << endl;
+        return -1;
+    }
+
+    // Paso 1: XOR entre IO e IM -> P1
+    unsigned char* P1 = XOR(IO, IM, widthIO * heightIO * 3);
+    cout << "Paso 1 completado: P1 generado." << endl;
+
+    // Paso 2: Rotar P1 3 bits a la derecha -> P2
+    unsigned char* P2 = RotateBits(P1, widthIO * heightIO * 3, 3, false);
+    cout << "Paso 2 completado: P2 generado." << endl;
+
+    // Paso 3: XOR entre P2 e IM -> P3
+    unsigned char* P3 = XOR(P2, IM, widthIO * heightIO * 3);
+    cout << "Paso 3 completado: P3 generado." << endl;
+
+    // Cargar las imágenes de referencia
+    int widthP1Ref = 0, heightP1Ref = 0;
+    int widthP2Ref = 0, heightP2Ref = 0;
+    int widthP3Ref = 0, heightP3Ref = 0;
+
+    unsigned char* P1Ref = loadPixels(archivoP1Ref, widthP1Ref, heightP1Ref);
+    unsigned char* P2Ref = loadPixels(archivoP2Ref, widthP2Ref, heightP2Ref);
+    unsigned char* P3Ref = loadPixels(archivoP3Ref, widthP3Ref, heightP3Ref);
+
+    if (!P1Ref || !P2Ref || !P3Ref) {
+        cout << "Error al cargar las imágenes de referencia." << endl;
+        return -1;
+    }
+
+    // Comparar las imágenes generadas con las de referencia
+    bool isP1Valid = compareImages(P1, P1Ref, widthIO, heightIO);
+    bool isP2Valid = compareImages(P2, P2Ref, widthIO, heightIO);
+    bool isP3Valid = compareImages(P3, P3Ref, widthIO, heightIO);
+
+    cout << "Comparación de P1: " << (isP1Valid ? "Correcto" : "Incorrecto") << endl;
+    cout << "Comparación de P2: " << (isP2Valid ? "Correcto" : "Incorrecto") << endl;
+    cout << "Comparación de P3: " << (isP3Valid ? "Correcto" : "Incorrecto") << endl;
+
+    // Liberar memoria
+    delete[] IO;
+    delete[] IM;
+    delete[] M;
+    delete[] P1;
+    delete[] P2;
+    delete[] P3;
+    delete[] P1Ref;
+    delete[] P2Ref;
+    delete[] P3Ref;
+
+    return 0;
+}
  
  /**
   * @brief loadPixels
@@ -323,3 +352,40 @@
  
      return resultado;
  }
+
+ bool verifyMasking(unsigned char* transformedImage, unsigned char* mask, int maskWidth, int maskHeight, int seed, const unsigned int* maskingData, int n_pixels) {
+    // Validar que las dimensiones sean válidas
+    if (maskWidth <= 0 || maskHeight <= 0 || transformedImage == nullptr || mask == nullptr || maskingData == nullptr) {
+        cout << "Error: Dimensiones inválidas o datos nulos." << endl;
+        return false;
+    }
+
+    // Iterar sobre los datos de enmascaramiento
+    for (int k = 0; k < n_pixels * 3; k += 3) {
+        // Calcular el índice del píxel en la imagen transformada usando el desplazamiento (seed)
+        int pixelIndex = (k / 3 + seed) % (maskWidth * maskHeight);
+
+        // Convertir el índice lineal a coordenadas 2D en la imagen transformada
+        int pixelY = pixelIndex / maskWidth;
+        int pixelX = pixelIndex % maskWidth;
+
+        // Ajustar las coordenadas para que se alineen con la máscara (repetir la máscara si es necesario)
+        int maskX = (k / 3) % maskWidth;
+        int maskY = (k / 3) / maskWidth;
+
+        // Calcular el índice lineal correspondiente en la máscara
+        int maskIndex = (maskY * maskWidth + maskX) * 3;
+
+        // Realizar la suma de los valores RGB
+        int r = transformedImage[pixelIndex * 3] + mask[maskIndex];
+        int g = transformedImage[pixelIndex * 3 + 1] + mask[maskIndex + 1];
+        int b = transformedImage[pixelIndex * 3 + 2] + mask[maskIndex + 2];
+
+        // Comparar con los datos de enmascaramiento
+        if (r != maskingData[k] || g != maskingData[k + 1] || b != maskingData[k + 2]) {
+            return false; // Los valores no coinciden
+        }
+    }
+
+    return true; // Todos los valores coinciden
+}
