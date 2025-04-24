@@ -3,7 +3,8 @@
 #include <QCoreApplication>
 #include <QImage>
 #include <QFile>
-// NO incluir <new> ni <cstring> si no están permitidos explícitamente más allá de Qt/iostream/fstream
+
+
 
 using namespace std;
 
@@ -18,130 +19,148 @@ unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size);
 unsigned char* ShiftImagePixels(const unsigned char* img, int size, int seed); // Desplazamiento cíclico de píxeles
 
 bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned int* RGB, int &n_pixels, int &seed);
-int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed);
-
+int verifyTransformation(
+    unsigned char* inputImage, unsigned char* IM, unsigned char* mask,
+    unsigned int* RGB, int size, int n_pixels, int seed);
+string archivoM(int indice, int totalArchivos); // Genera el nombre del archivo de máscara
 
 
 int main() {
-    // --- Rutas (Asegúrate que sean correctas para tu sistema) ---
-    const char* basePath = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/";
-    char pathBuffer[512]; // Buffer para construir rutas
-
-    snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "I_O.bmp");
-    QString archivoIO_q = pathBuffer;
-    snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "I_M.bmp");
-    QString archivoIM_q = pathBuffer;
-    snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "M.bmp");
-    QString archivoM_q = pathBuffer;
-
-    // Rutas archivos de texto
-    const char* archivoM1_path = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/M1.txt";
-    const char* archivoM2_path = "C:/Users/goken/OneDrive/Escritorio/2025-1/Informatica_II/DesafioI_InformaticaII/DesafioI/Caso_1/M2.txt";
-
-    // (Opcional) Rutas imágenes de referencia para comparar
-    snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "P1.bmp");
-    QString archivoP1Ref_q = pathBuffer;
-    snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "P2.bmp");
-    QString archivoP2Ref_q = pathBuffer;
-    snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "I_D.bmp"); // P3 = ID
-    QString archivoP3Ref_q = pathBuffer;
-
-
-    // --- Variables para dimensiones ---
-    int widthIO = 0, heightIO = 0;
-    int widthIM = 0, heightIM = 0;
-    int widthM = 0, heightM = 0;
-    int sizeIO = 0; // Tamaño en bytes
-
-    // --- Cargar Imágenes Iniciales ---
-    unsigned char* IO = loadPixels(archivoIO_q, widthIO, heightIO);
-    unsigned char* IM = loadPixels(archivoIM_q, widthIM, heightIM);
-    unsigned char* M = loadPixels(archivoM_q, widthM, heightM);
-
-    // Validar carga y dimensiones
-    if (!IO || !IM || !M) {
-        cout << "Error al cargar las imágenes iniciales (IO, IM o M)." << endl;
-        // Liberar lo que se haya podido cargar
-        delete[] IO; delete[] IM; delete[] M;
-        return -1;
-    }
-    if (widthIO != widthIM || heightIO != heightIM) {
-        cout << "Error: Las dimensiones de IO e IM no coinciden." << endl;
-        delete[] IO; delete[] IM; delete[] M;
-        return -1;
-    }
-    sizeIO = widthIO * heightIO * 3; // Calcular tamaño una vez
-    // cargar semilla y máscara
-    int seed = 0, n_pixels = 0;
-    unsigned int* RGB = loadSeedMasking(archivoM1_path, seed, n_pixels);
-    if (!RGB) {
-        cout << "Error al cargar la semilla y la máscara." << endl;
-        delete[] IO; delete[] IM; delete[] M;
-        return -1;
-    }
-    cout << "--- Iniciando Proceso (Caso 1) ---" << endl;
-    int paso1_verificado = 0;
-    paso1_verificado = verifyTransformation(IO, IM, M, RGB, sizeIO, n_pixels, seed);
-    if (paso1_verificado == -1) {
-        cout << "Error: La verificación de transformación falló." << endl;
-        delete[] IO; delete[] IM; delete[] M;
-        return -1;
-    } else if (paso1_verificado == 0) {
-        cout << "La transformación XOR fue verificada correctamente." << endl;
-    } else if (paso1_verificado < 8) {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado << " bits a la izquierda." << endl;
-    } else if (paso1_verificado < 18) {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado - 10 << " bits a la derecha." << endl;
-    } else if (paso1_verificado < 28) {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado - 20 << " bits a la izquierda." << endl;
-    } else {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado - 30 << " bits a la derecha." << endl;
-    }
-    // --- Guardar transformacion correcta para la siguiente ---
-    unsigned char* transformedImage = XOR(IM, IO, sizeIO);
-    unsigned char* rotateimage = RotateBits(transformedImage, sizeIO, 3, false);
     
-    // --- Caso 2: Cargar M2 y verificar ---
-    int seed2 = 0, n_pixels2 = 0;
-    unsigned int* RGB2 = loadSeedMasking(archivoM2_path, seed2, n_pixels2);
+    QString archivoEntrada = "../data/I_D.bmp";
+    QString archivoSalida = "../data/I_Ofin.bmp";
+    QString archivoIM = "../data/I_M.bmp";
+    QString archivoMask = "../data/M.bmp"; // Archivo de máscara inicial
     
-    if (!RGB2) {
-        cout << "Error al cargar la semilla y la máscara de M2." << endl;
+    int Mtxt = 7;  // Número de archivos de máscara a procesar
+
+    // --- Variables ---
+    unsigned char *ID = nullptr, *IM = nullptr, *M = nullptr;
+    unsigned char *currentImage = nullptr; // Imagen en la etapa actual del descifrado
+    unsigned char *previousImage = nullptr; // Resultado de aplicar la inversa
+    unsigned int *data_i = nullptr; // Datos del archivo Mi.txt
+    int width = 0, height = 0, size = 0;
+    int mWidth = 0, mHeight = 0;
+    int Mwidth = 0, Mheight = 0;
+    bool decryption_successful = false;
+    unsigned char* IO_final = nullptr; // Puntero al resultado final
+
+    
+    // --- cargar imagenes base ---
+    ID = loadPixels(archivoEntrada, width, height);
+    IM = loadPixels(archivoIM, mWidth, mHeight);
+    M = loadPixels(archivoMask, Mwidth, Mheight); // Cargar la imagen de máscara inicial
+    if (!ID || !IM || !M) {
+        cout << "Error al cargar las imagenes." << endl;
         return -1;
     }
-    cout << "Semilla de M2: " << seed2 << endl;
-    cout << "Cantidad de píxeles leídos de M2: " << n_pixels2 << endl;
-    bool verificacion = verifyMask(rotateimage, M, RGB2, n_pixels2, seed2);
-    if (!verificacion) {
-        cout << "Error: La verificación de la máscara falló." << endl;
-        delete[] IO; delete[] IM; delete[] M;
-        return -1;
+    size = width * height * 3; // Tamaño de la imagen en bytes
+    cout << "imagenes cargadas" << endl;
+    currentImage = ID; // Inicializar currentImage con ID
+    for (int i = Mtxt - 1; i >= 0; --i) {
+        // Generar el nombre del archivo de máscara correspondiente
+        string nombreArchivo = archivoM(i, Mtxt);
+        int seedi = 0;
+        int n_pixelsi = 0;
+        data_i = loadSeedMasking(nombreArchivo.c_str(), seedi, n_pixelsi); // Cargar la semilla y los datos de enmascaramiento
+        int transformacion = verifyTransformation(currentImage, IM, M, data_i, size, n_pixelsi, seedi); // Verificar la transformación
+        delete [] data_i; // Liberar memoria de los datos de enmascaramiento
+        cout << seedi << " SEMilllllaaaaaaaaa" << endl;
+        cout << n_pixelsi <<  "N pixelssssssssss 0" << endl;
+        data_i = nullptr; // Reiniciar puntero para evitar uso posterior
+        previousImage = nullptr;
+
+        
+        switch (transformacion) {
+            case 0:
+                previousImage = XOR(currentImage, IM, size); // Aplicar XOR
+                cout << "Transformacion 0: XOR aplicado." << endl;
+                break;
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                previousImage = RotateBits(currentImage, size, 8 - transformacion, true); // Rotar bits a la izquierda
+                cout << "Transformacion rotacion de" << transformacion << " bits a la izquierda." << endl;
+                break;
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
+                previousImage = RotateBits(currentImage, size, transformacion - 10, false); // Rotar bits a la derecha
+                cout << "Transformacion rotacion de" << transformacion - 10 << " bits a la derecha." << endl;
+                break;
+            case 21:
+            case 22:
+            case 23:
+            case 24:
+            case 25:
+            case 26:
+            case 27:
+                previousImage = ShiftBits(currentImage, size, transformacion - 20, true); // Desplazar bits a la izquierda
+                cout << "Transformacion desplazamiento de" << transformacion - 20 << " bits a la izquierda." << endl;
+                break;
+            case 31:
+            case 32:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+                previousImage = ShiftBits(currentImage, size, transformacion - 30, false); // Desplazar bits a la derecha
+                cout << "Transformacion desplazamiento de" << transformacion - 30 << " bits a la derecha." << endl;
+                break;
+            default:
+                cout << "Error: Transformacion no reconocida." << endl;
+                return -1; // Salir si la transformación no es válida
+            
+            
+            
+        }
+        if (!previousImage) {
+            cout << "Error: previousImage no está inicializado." << endl;
+            return -1;
+        }
+        if (currentImage != ID) {
+            delete[] currentImage; // Liberar memoria de la imagen anterior
+        }
+        currentImage = previousImage; // Actualizar currentImage con el resultado de XOR
+        cout << "Etapa" << i << "completada." << endl;
+        
+
+
+
+
+
+
+    }
+    IO_final = currentImage; // Guardar el resultado final
+    decryption_successful = true; // Marcar como exitoso
+    cout << "Desencriptacion exitosa." << endl;
+    cout << "Guardando imagen desencriptada..." << endl;
+    if (!exportImage(IO_final, width, height, archivoSalida)) {
+        cout << "Error al guardar la imagen desencriptada." << endl;
+        decryption_successful = false; // Marcar como fallido
     } else {
-        cout << "La verificación de la máscara fue exitosa." << endl;
+        cout << "Imagen desencriptada guardada exitosamente." << endl;
     }
-    cout << "--- Iniciando Proceso (Caso 2) ---" << endl;
-    int paso2_verificado = 0;
-    paso2_verificado = verifyTransformation(transformedImage, IM, M, RGB2, sizeIO, n_pixels2, seed2);
-    if (paso2_verificado == -1) {
-        cout << "Error: La verificación de transformación falló." << endl;
-        delete[] IO; delete[] IM; delete[] M;
-        return -1;
-    } else if (paso2_verificado == 0) {
-        cout << "La transformación XOR fue verificada correctamente." << endl;
-    } else if (paso2_verificado < 8) {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado << " bits a la izquierda." << endl;
-    } else if (paso2_verificado < 18) {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado - 10 << " bits a la derecha." << endl;
-    } else if (paso2_verificado < 28) {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado - 20 << " bits a la izquierda." << endl;
-    } else {
-        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado - 30 << " bits a la derecha." << endl;
-    }
+    return decryption_successful ? 0 : -1; // Retornar el resultado de la desencriptación
 
 
 
+    //limpiar
+    delete[] ID; // Liberar memoria de la imagen original
+    delete[] IM; // Liberar memoria de la imagen de enmascaramiento
+    delete[] M; // Liberar memoria de la imagen de máscara inicial
+    delete[] currentImage; // Liberar memoria de la imagen actual
+    delete[] previousImage; // Liberar memoria de la imagen anterior
 
-   
 }
 
 // --- Implementaciones de Funciones ---
@@ -347,46 +366,104 @@ bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned 
 }
 
 
-int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed)
+
+int verifyTransformation(
+    unsigned char* inputImage, unsigned char* IM, unsigned char* mask,
+    unsigned int* RGB, int size, int n_pixels, int seed)
 {
-    cout << "Verificando transformación..." << endl;
-    cout << "Semilla: " << seed << endl;
-    cout << "Cantidad de píxeles: " << n_pixels << endl;
-    cout << "Tamaño de la imagen: " << size << endl;
-    cout << "Tamaño de la máscara: " << n_pixels * 3 << endl;
-    
-    unsigned char* trans = XOR(encryptedImage, IM, size);
-    if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return 0; }
-    else
-    {
-        trans = encryptedImage;
-        for(int i = 1; i < 8; i++)
-        {
-            
-            trans = RotateBits(trans, size, 1, true);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+    cout << "Verificando transformacion para seed=" << seed << ", n_pixels=" << n_pixels << "..." << endl;
+    unsigned char* trans = nullptr; // Puntero para el resultado temporal
+
+    // Prueba 0: XOR
+    cout << "  Probando XOR..." << endl;
+    trans = XOR(inputImage, IM, size);
+    if (trans) {
+        if (verifyMask(trans, mask, RGB, n_pixels, seed)) {
+            cout << "  Transformacion encontrada: XOR (Code 0)" << endl;
+            delete[] trans; // Liberar memoria antes de retornar
+            return 0;
         }
-        trans = encryptedImage;
-        for(int i = 11; i < 18; i++)
-        {
-            
-            trans = RotateBits(trans, size, 1, false);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
-        }
-        trans = encryptedImage;
-        for(int i = 21; i < 28; i++)
-        {
-            
-            trans = ShiftBits(trans, size, 1, true);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
-        }
-        trans = encryptedImage;
-        for(int i = 31; i < 38; i++)
-        {
-            
-            trans = ShiftBits(trans, size, 1, false);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
-        }
+        delete[] trans; // Liberar si la verificación falló
+        trans = nullptr;
+    } else { cout << "    Fallo al generar XOR" << endl; }
+
+    // Pruebas 1-7: RotateRight
+    cout << "  Probando RotateRight..." << endl;
+    for (int i = 1; i < 8; i++) {
+        // cout << "    Probando RotR " << i << "..." << endl; // Debug
+        trans = RotateBits(inputImage, size, i, false); // Aplicar a inputImage original, i bits, false=Right
+        if (trans) {
+            if (verifyMask(trans, mask, RGB, n_pixels, seed)) {
+                cout << "  Transformacion encontrada: RotateRight " << i << " (Code " << i << ")" << endl;
+                delete[] trans; // Liberar memoria antes de retornar
+                return i;
+            }
+            delete[] trans; // Liberar si falló
+            trans = nullptr;
+        } else { /* cout << "    Fallo al generar RotR " << i << endl; */ } // Debug
     }
-    return -1;
+
+    // Pruebas 11-17: RotateLeft
+    cout << "  Probando RotateLeft..." << endl;
+    for (int i = 1; i < 8; i++) {
+        // cout << "    Probando RotL " << i << "..." << endl; // Debug
+        trans = RotateBits(inputImage, size, i, true); // Aplicar a inputImage original, i bits, true=Left
+        if (trans) {
+            if (verifyMask(trans, mask, RGB, n_pixels, seed)) {
+                cout << "  Transformacion encontrada: RotateLeft " << i << " (Code " << 10 + i << ")" << endl;
+                delete[] trans; // Liberar memoria antes de retornar
+                return 10 + i;
+            }
+            delete[] trans; // Liberar si falló
+            trans = nullptr;
+        } else { /* cout << "    Fallo al generar RotL " << i << endl; */ } // Debug
+    }
+
+    // Pruebas 21-27: ShiftLeft
+    cout << "  Probando ShiftLeft..." << endl;
+    for (int i = 1; i < 8; i++) {
+        // cout << "    Probando ShiftL " << i << "..." << endl; // Debug
+        trans = ShiftBits(inputImage, size, i, true); // Aplicar a inputImage original, i bits, true=Left
+        if (trans) {
+            if (verifyMask(trans, mask, RGB, n_pixels, seed)) {
+                cout << "  Transformacion encontrada: ShiftLeft " << i << " (Code " << 20 + i << ")" << endl;
+                delete[] trans; // Liberar memoria antes de retornar
+                return 20 + i;
+            }
+            delete[] trans; // Liberar si falló
+            trans = nullptr;
+        } else { /* cout << "    Fallo al generar ShiftL " << i << endl; */ } // Debug
+    }
+
+    // Pruebas 31-37: ShiftRight
+    cout << "  Probando ShiftRight..." << endl;
+    for (int i = 1; i < 8; i++) {
+        // cout << "    Probando ShiftR " << i << "..." << endl; // Debug
+        trans = ShiftBits(inputImage, size, i, false); // Aplicar a inputImage original, i bits, false=Right
+        if (trans) {
+            if (verifyMask(trans, mask, RGB, n_pixels, seed)) {
+                cout << "  Transformacion encontrada: ShiftRight " << i << " (Code " << 30 + i << ")" << endl;
+                delete[] trans; // Liberar memoria antes de retornar
+                return 30 + i;
+            }
+            delete[] trans; // Liberar si falló
+            trans = nullptr;
+        } else { /* cout << "    Fallo al generar ShiftR " << i << endl; */ } // Debug
+    }
+
+    cout << "  No se encontro ninguna transformacion compatible." << endl;
+    return -1; // No se encontró ninguna transformación
+}
+
+
+string archivoM(int indice, int totalArchivos) {
+    // Verificamos si el índice está dentro del rango
+    if (indice >= 0 && indice < totalArchivos) {
+        // Creamos el nombre del archivo en el formato correcto
+        string nombreArchivo = "../data/M" + to_string(indice) + ".txt";
+        return nombreArchivo;
+    } else {
+        cout << "Índice fuera de rango." << endl;
+        return "";  // Retorna una cadena vacía si el índice no es válido
+    }
 }
