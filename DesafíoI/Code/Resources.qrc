@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/imagenes">
+        <file>Imagenes/I_D.bmp</file>
+        <file>Imagenes/I_M.bmp</file>
+        <file>Imagenes/I_O.bmp</file>
+        <file>Imagenes/M.bmp</file>
+        <file>Imagenes/M0.txt</file>
+        <file>Imagenes/M1.txt</file>
+        <file>Imagenes/M2.txt</file>
+        <file>Imagenes/P1.bmp</file>
+        <file>Imagenes/P2.bmp</file>
+    </qresource>
+</RCC>

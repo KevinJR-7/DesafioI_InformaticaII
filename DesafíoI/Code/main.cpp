@@ -35,104 +35,130 @@
 #include <iostream>
 #include <QCoreApplication>
 #include <QImage>
+#include <QFile>
 
 using namespace std;
 unsigned char* loadPixels(QString input, int &width, int &height);
 bool exportImage(unsigned char* pixelData, int width,int height, QString archivoSalida);
 unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixels);
+bool compareImages(unsigned char* img1, unsigned char* img2, int width, int height);
+unsigned char* ShiftBits(unsigned char *img, int size, int bits, bool direction);
+unsigned char* RotateBits(unsigned char *img, int size, int bits, bool direction);
+unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size);
+bool verifyMasking(unsigned char* transformedImage, unsigned char* mask, int maskWidth, int maskHeight, int seed, const unsigned int* maskingData, int n_pixels);
 
-int main()
-{
-    // Definición de rutas de archivo de entrada (imagen original) y salida (imagen modificada)
-    QString archivoEntrada = "I_O.bmp";
-    QString archivoSalida = "I_D.bmp";
 
-    // Variables para almacenar las dimensiones de la imagen
-    int height = 0;
-    int width = 0;
+int main() {
+    // Rutas de las imágenes y archivos
+    QString archivoIO = ":/imagenes/Imagenes/I_O.bmp";
+    QString archivoIM = ":/imagenes/Imagenes/I_M.bmp";
+    QString archivoM = ":/imagenes/Imagenes/M.bmp";
+    QString archivoP1Ref = ":/imagenes/Imagenes/P1.bmp";
+    QString archivoP2Ref = ":/imagenes/Imagenes/P2.bmp";
+    QString archivoP3Ref = ":/imagenes/Imagenes/I_D.bmp";
 
-    // Carga la imagen BMP en memoria dinámica y obtiene ancho y alto
-    unsigned char *pixelData = loadPixels(archivoEntrada, width, height);
+    // Variables para dimensiones
+    int widthIO = 0, heightIO = 0;
+    int widthIM = 0, heightIM = 0;
+    int widthM = 0, heightM = 0;
 
-    // Simula una modificación de la imagen asignando valores RGB incrementales
-    // (Esto es solo un ejemplo de manipulación artificial)
-    for (int i = 0; i < width * height * 3; i += 3) {
-        pixelData[i] = i;     // Canal rojo
-        pixelData[i + 1] = i; // Canal verde
-        pixelData[i + 2] = i; // Canal azul
+    // Cargar las imágenes IO, IM y la máscara M
+    unsigned char* IO = loadPixels(archivoIO, widthIO, heightIO);
+    unsigned char* IM = loadPixels(archivoIM, widthIM, heightIM);
+    unsigned char* M = loadPixels(archivoM, widthM, heightM);
+
+    if (!IO || !IM || !M) {
+        cout << "Error al cargar las imágenes." << endl;
+        return -1;
     }
 
-    // Exporta la imagen modificada a un nuevo archivo BMP
-    bool exportI = exportImage(pixelData, width, height, archivoSalida);
+    // Paso 1: XOR entre IO e IM -> P1
+    unsigned char* P1 = XOR(IO, IM, widthIO * heightIO * 3);
+    cout << "Paso 1 completado: P1 generado." << endl;
 
-    // Muestra si la exportación fue exitosa (true o false)
-    cout << exportI << endl;
+    // Paso 2: Rotar P1 3 bits a la derecha -> P2
+    unsigned char* P2 = RotateBits(P1, widthIO * heightIO * 3, 3, false);
+    cout << "Paso 2 completado: P2 generado." << endl;
 
-    // Libera la memoria usada para los píxeles
-    delete[] pixelData;
-    pixelData = nullptr;
+    // Paso 3: XOR entre P2 e IM -> P3
+    unsigned char* P3 = XOR(P2, IM, widthIO * heightIO * 3);
+    cout << "Paso 3 completado: P3 generado." << endl;
 
-    // Variables para almacenar la semilla y el número de píxeles leídos del archivo de enmascaramiento
-    int seed = 0;
-    int n_pixels = 0;
+    // Cargar las imágenes de referencia
+    int widthP1Ref = 0, heightP1Ref = 0;
+    int widthP2Ref = 0, heightP2Ref = 0;
+    int widthP3Ref = 0, heightP3Ref = 0;
 
-    // Carga los datos de enmascaramiento desde un archivo .txt (semilla + valores RGB)
-    unsigned int *maskingData = loadSeedMasking("M1.txt", seed, n_pixels);
+    unsigned char* P1Ref = loadPixels(archivoP1Ref, widthP1Ref, heightP1Ref);
+    unsigned char* P2Ref = loadPixels(archivoP2Ref, widthP2Ref, heightP2Ref);
+    unsigned char* P3Ref = loadPixels(archivoP3Ref, widthP3Ref, heightP3Ref);
 
-    // Muestra en consola los primeros valores RGB leídos desde el archivo de enmascaramiento
-    for (int i = 0; i < n_pixels * 3; i += 3) {
-        cout << "Pixel " << i / 3 << ": ("
-             << maskingData[i] << ", "
-             << maskingData[i + 1] << ", "
-             << maskingData[i + 2] << ")" << endl;
+    if (!P1Ref || !P2Ref || !P3Ref) {
+        cout << "Error al cargar las imágenes de referencia." << endl;
+        return -1;
     }
 
-    // Libera la memoria usada para los datos de enmascaramiento
-    if (maskingData != nullptr){
-        delete[] maskingData;
-        maskingData = nullptr;
-    }
+    // Comparar las imágenes generadas con las de referencia
+    bool isP1Valid = compareImages(P1, P1Ref, widthIO, heightIO);
+    bool isP2Valid = compareImages(P2, P2Ref, widthIO, heightIO);
+    bool isP3Valid = compareImages(P3, P3Ref, widthIO, heightIO);
 
-    return 0; // Fin del programa
+    cout << "Comparación de P1: " << (isP1Valid ? "Correcto" : "Incorrecto") << endl;
+    cout << "Comparación de P2: " << (isP2Valid ? "Correcto" : "Incorrecto") << endl;
+    cout << "Comparación de P3: " << (isP3Valid ? "Correcto" : "Incorrecto") << endl;
+
+    // Liberar memoria
+    delete[] IO;
+    delete[] IM;
+    delete[] M;
+    delete[] P1;
+    delete[] P2;
+    delete[] P3;
+    delete[] P1Ref;
+    delete[] P2Ref;
+    delete[] P3Ref;
+
+    return 0;
 }
 
+/**
+  * @brief loadPixels
+  *
+  * @param input
+  * @param width
+  * @param height
+  * @return unsigned*
+  */
 
-unsigned char* loadPixels(QString input, int &width, int &height){
-/*
- * @brief Carga una imagen BMP desde un archivo y extrae los datos de píxeles en formato RGB.
- *
- * Esta función utiliza la clase QImage de Qt para abrir una imagen en formato BMP, convertirla al
- * formato RGB888 (24 bits: 8 bits por canal), y copiar sus datos de píxeles a un arreglo dinámico
- * de tipo unsigned char. El arreglo contendrá los valores de los canales Rojo, Verde y Azul (R, G, B)
- * de cada píxel de la imagen, sin rellenos (padding).
- *
- * @param input Ruta del archivo de imagen BMP a cargar (tipo QString).
- * @param width Parámetro de salida que contendrá el ancho de la imagen cargada (en píxeles).
- * @param height Parámetro de salida que contendrá la altura de la imagen cargada (en píxeles).
- * @return Puntero a un arreglo dinámico que contiene los datos de los píxeles en formato RGB.
- *         Devuelve nullptr si la imagen no pudo cargarse.
- *
- * @note Es responsabilidad del usuario liberar la memoria asignada al arreglo devuelto usando `delete[]`.
- */
+unsigned char* loadPixels(QString input, int &width, int &height) {
 
-    // Cargar la imagen BMP desde el archivo especificado (usando Qt)
+    // Cargar la imagen BMP desde el archivo especificado
     QImage imagen(input);
 
     // Verifica si la imagen fue cargada correctamente
     if (imagen.isNull()) {
-        cout << "Error: No se pudo cargar la imagen BMP." << std::endl;
-        return nullptr; // Retorna un puntero nulo si la carga falló
+        cout << "Error: No se pudo cargar la imagen desde " << input.toStdString() << endl;
+        return nullptr;
     }
 
     // Convierte la imagen al formato RGB888 (3 canales de 8 bits sin transparencia)
     imagen = imagen.convertToFormat(QImage::Format_RGB888);
+    if (imagen.format() != QImage::Format_RGB888) {
+        cout << "Error: No se pudo convertir la imagen al formato RGB888." << endl;
+        return nullptr;
+    }
 
     // Obtiene el ancho y el alto de la imagen cargada
     width = imagen.width();
     height = imagen.height();
+    cout << "Dimensiones de la imagen: " << width << "x" << height << endl;
 
     // Calcula el tamaño total de datos (3 bytes por píxel: R, G, B)
     int dataSize = width * height * 3;
+    if (dataSize <= 0) {
+        cout << "Error: Tamaño de datos inválido: " << dataSize << endl;
+        return nullptr;
+    }
 
     // Reserva memoria dinámica para almacenar los valores RGB de cada píxel
     unsigned char* pixelData = new unsigned char[dataSize];
@@ -144,29 +170,30 @@ unsigned char* loadPixels(QString input, int &width, int &height){
         memcpy(dstLine, srcLine, width * 3);                    // Copia los píxeles RGB de esa línea (sin padding)
     }
 
-    // Retorna el puntero al arreglo de datos de píxeles cargado en memoria
+    cout << "Imagen cargada correctamente desde: " << input.toStdString() << endl;
     return pixelData;
 }
 
+/**
+  * @brief Exporta una imagen en formato BMP a partir de un arreglo de píxeles en formato RGB.
+  *
+  * Esta función crea una imagen de tipo QImage utilizando los datos contenidos en el arreglo dinámico
+  * `pixelData`, que debe representar una imagen en formato RGB888 (3 bytes por píxel, sin padding).
+  * A continuación, copia los datos línea por línea a la imagen de salida y guarda el archivo resultante
+  * en formato BMP en la ruta especificada.
+  *
+  * @param pixelData Puntero a un arreglo de bytes que contiene los datos RGB de la imagen a exportar.
+  *                  El tamaño debe ser igual a width * height * 3 bytes.
+  * @param width Ancho de la imagen en píxeles.
+  * @param height Alto de la imagen en píxeles.
+  * @param archivoSalida Ruta y nombre del archivo de salida en el que se guardará la imagen BMP (QString).
+  *
+  * @return true si la imagen se guardó exitosamente; false si ocurrió un error durante el proceso.
+  *
+  * @note La función no libera la memoria del arreglo pixelData; esta responsabilidad recae en el usuario.
+  */
 bool exportImage(unsigned char* pixelData, int width,int height, QString archivoSalida){
-/*
- * @brief Exporta una imagen en formato BMP a partir de un arreglo de píxeles en formato RGB.
- *
- * Esta función crea una imagen de tipo QImage utilizando los datos contenidos en el arreglo dinámico
- * `pixelData`, que debe representar una imagen en formato RGB888 (3 bytes por píxel, sin padding).
- * A continuación, copia los datos línea por línea a la imagen de salida y guarda el archivo resultante
- * en formato BMP en la ruta especificada.
- *
- * @param pixelData Puntero a un arreglo de bytes que contiene los datos RGB de la imagen a exportar.
- *                  El tamaño debe ser igual a width * height * 3 bytes.
- * @param width Ancho de la imagen en píxeles.
- * @param height Alto de la imagen en píxeles.
- * @param archivoSalida Ruta y nombre del archivo de salida en el que se guardará la imagen BMP (QString).
- *
- * @return true si la imagen se guardó exitosamente; false si ocurrió un error durante el proceso.
- *
- * @note La función no libera la memoria del arreglo pixelData; esta responsabilidad recae en el usuario.
- */
+
 
     // Crear una nueva imagen de salida con el mismo tamaño que la original
     // usando el formato RGB888 (3 bytes por píxel, sin canal alfa)
@@ -193,25 +220,26 @@ bool exportImage(unsigned char* pixelData, int width,int height, QString archivo
 
 }
 
+/**
+  *  @brief Carga la semilla y los resultados del enmascaramiento desde un archivo de texto.
+  *
+  * Esta función abre un archivo de texto que contiene una semilla en la primera línea y,
+  * a continuación, una lista de valores RGB resultantes del proceso de enmascaramiento.
+  * Primero cuenta cuántos tripletes de píxeles hay, luego reserva memoria dinámica
+  * y finalmente carga los valores en un arreglo de enteros.
+  *
+  * @param nombreArchivo Ruta del archivo de texto que contiene la semilla y los valores RGB.
+  * @param seed Variable de referencia donde se almacenará el valor entero de la semilla.
+  * @param n_pixels Variable de referencia donde se almacenará la cantidad de píxeles leídos
+  *                 (equivalente al número de líneas después de la semilla).
+  *
+  * @return Puntero a un arreglo dinámico de enteros que contiene los valores RGB
+  *         en orden secuencial (R, G, B, R, G, B, ...). Devuelve nullptr si ocurre un error al abrir el archivo.
+  *
+  * @note Es responsabilidad del usuario liberar la memoria reservada con delete[].
+  */
 unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixels){
-/*
- * @brief Carga la semilla y los resultados del enmascaramiento desde un archivo de texto.
- *
- * Esta función abre un archivo de texto que contiene una semilla en la primera línea y,
- * a continuación, una lista de valores RGB resultantes del proceso de enmascaramiento.
- * Primero cuenta cuántos tripletes de píxeles hay, luego reserva memoria dinámica
- * y finalmente carga los valores en un arreglo de enteros.
- *
- * @param nombreArchivo Ruta del archivo de texto que contiene la semilla y los valores RGB.
- * @param seed Variable de referencia donde se almacenará el valor entero de la semilla.
- * @param n_pixels Variable de referencia donde se almacenará la cantidad de píxeles leídos
- *                 (equivalente al número de líneas después de la semilla).
- *
- * @return Puntero a un arreglo dinámico de enteros que contiene los valores RGB
- *         en orden secuencial (R, G, B, R, G, B, ...). Devuelve nullptr si ocurre un error al abrir el archivo.
- *
- * @note Es responsabilidad del usuario liberar la memoria reservada con delete[].
- */
+
 
     // Abrir el archivo que contiene la semilla y los valores RGB
     ifstream archivo(nombreArchivo);
@@ -268,6 +296,99 @@ unsigned int* loadSeedMasking(const char* nombreArchivo, int &seed, int &n_pixel
     return RGB;
 }
 
+
+//Operacion XOR entre dos imágenes
+unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size) {
+    unsigned char* result = new unsigned char[size];
+    for (int i = 0; i < size; ++i) {
+        result[i] = img1[i] ^ img2[i];
+    }
+
+    return result;
+}
+
+
+//Rotar bits derecha o izquierda
+unsigned char* RotateBits(unsigned char *img, int size, int bits, bool direction) {
+    if (img == nullptr || size <= 0) return nullptr;
+
+    unsigned char* resultado = new unsigned char[size];
+
+    for (int i = 0; i < size; ++i) {
+        if (direction) {
+            resultado[i] = (img[i] << bits) | (img[i] >> (8 - bits));
+        } else {
+            resultado[i] = (img[i] >> bits) | (img[i] << (8 - bits));
+        }
+    }
+
+    return resultado;
+}
+
+//desplazar bits
+unsigned char* ShiftBits(unsigned char *img, int size, int bits, bool direction) {
+    if (img == nullptr || size <= 0) return nullptr;
+
+    unsigned char* resultado = new unsigned char[size];
+
+    for (int i = 0; i < size; ++i) {
+        if (direction) {
+            resultado[i] = img[i] << bits;
+        } else {
+            resultado[i] = img[i] >> bits;
+        }
+    }
+
+    return resultado;
+}
+
+//Comparar dos imágenes
+bool compareImages(unsigned char *img1, unsigned char *img2, int width, int height) {
+    int size = width * height * 3; // 3 bytes por píxel (RGB)
+    for (int i = 0; i < size; ++i) {
+        if (img1[i] != img2[i]) {
+            return false; // Las imágenes son diferentes
+        }
+    }
+    return true; // Las imágenes son iguales
+}
+
+bool verifyMasking(unsigned char* transformedImage, unsigned char* mask, int maskWidth, int maskHeight, int seed, const unsigned int* maskingData, int n_pixels) {
+    // Validar que las dimensiones sean válidas
+    if (maskWidth <= 0 || maskHeight <= 0 || transformedImage == nullptr || mask == nullptr || maskingData == nullptr) {
+        cout << "Error: Dimensiones inválidas o datos nulos." << endl;
+        return false;
+    }
+
+    // Iterar sobre los datos de enmascaramiento
+    for (int k = 0; k < n_pixels * 3; k += 3) {
+        // Calcular el índice del píxel en la imagen transformada usando el desplazamiento (seed)
+        int pixelIndex = (k / 3 + seed); //% (maskWidth * maskHeight);
+
+        // Convertir el índice lineal a coordenadas 2D en la imagen transformada
+        //int pixelY = pixelIndex / maskWidth;
+        //int pixelX = pixelIndex % maskWidth;
+
+        // Ajustar las coordenadas para que se alineen con la máscara (repetir la máscara si es necesario)
+        //int maskX = (k / 3) % maskWidth;
+        //int maskY = (k / 3) / maskWidth;
+
+        // Calcular el índice lineal correspondiente en la máscara
+        //int maskIndex = (maskY * maskWidth + maskX) * 3;
+
+        // Realizar la suma de los valores RGB
+        int r = transformedImage[pixelIndex * 3] + mask[k];
+        int g = transformedImage[pixelIndex * 3 + 1] + mask[k + 1];
+        int b = transformedImage[pixelIndex * 3 + 2] + mask[k + 2];
+
+        // Comparar con los datos de enmascaramiento
+        if (r != maskingData[k] || g != maskingData[k + 1] || b != maskingData[k + 2]) {
+            return false; // Los valores no coinciden
+        }
+    }
+
+    return true; // Todos los valores coinciden
+}
 
 
 
