@@ -37,6 +37,49 @@ int main() {
     // Rutas archivos de texto
     const char* archivoM1_path = "D:/Universidad/Carpetas_Materias/Informatica/DesafioI_InformaticaII/DesafioI/Caso_1/M1.txt";
     const char* archivoM2_path = "D:/Universidad/Carpetas_Materias/Informatica/DesafioI_InformaticaII/DesafioI/Caso_1/M2.txt";
+    //todos los Mx
+    unsigned int i = 0;
+    int size = 1;
+    int* seedArray = new int[size];
+    int* n_pixelsArray = new int[size];
+    unsigned int** M_RGB = new unsigned int*[size];
+
+    char numStr[10]; // 9digitos + nulo
+    while(true)
+    {
+        sprintf(numStr, "%d", i); // Convierte el número en una cadena
+
+        snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "/M");
+        snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", pathBuffer, numStr);
+        snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", pathBuffer, ".txt");
+
+        //unsigned int* data1 = loadSeedMasking(archivoM1_path, seed1, n_pixels1);
+        M_RGB[i] = loadSeedMasking(pathBuffer, seedArray[i], n_pixelsArray[i]);
+        if(M_RGB[i] == nullptr)
+        {
+            cout << "Se encontraron " << i+1 << " archivos Mx.txt" << endl;
+            break;
+        }
+
+        // Redimensionar el arreglo
+        size++;
+        int* newSeedArray = new int[size]; // Crear nuevo arreglo de tamaño 'newSize'
+        int* newN_pixelsArray = new int[size]; // Crear nuevo arreglo de tamaño 'newSize'
+
+        // Copiar datos del arreglo antiguo al nuevo
+        for (int i = 0; i < size-1; i++) {
+            newSeedArray[i] = seedArray[i];
+            newN_pixelsArray[i] = n_pixelsArray[i];
+        }
+
+        delete[] seedArray; // Liberar memoria del arreglo anterior
+        delete[] n_pixelsArray; // Liberar memoria del arreglo anterior
+        seedArray = newSeedArray; // Actualizar el puntero al nuevo arreglo
+        n_pixelsArray = newN_pixelsArray; // Actualizar el puntero al nuevo arreglo
+
+        i++;
+    }
+
 
     // (Opcional) Rutas imágenes de referencia para comparar
     snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", basePath, "P1.bmp");
@@ -357,41 +400,79 @@ bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned 
     return true; // La verificación fue exitosa
 }
 
-int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed)
+int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM, unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed)
 {
     unsigned char* trans = XOR(encryptedImage, IM, size);
-    if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return 0; }
+    if (verifyMask(trans, mask, RGB, n_pixels, seed))
+    {
+        for (int i = 0; i < size; i++)
+        {
+            *(encryptedImage + i) = *(trans + i); // Copia los datos usando punteros
+        }
+        return 0;
+    }
     else
     {
         trans = encryptedImage;
-        for(int i = 1; i < 8; i++)
+        for (int i = 1; i < 8; i++)
         {
             trans = RotateBits(trans, size, 1, true);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+            if (verifyMask(trans, mask, RGB, n_pixels, seed))
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    *(encryptedImage + j) = *(trans + j); // Actualiza los datos
+                }
+                return i;
+            }
         }
         trans = encryptedImage;
-        for(int i = 11; i < 18; i++)
+        for (int i = 11; i < 18; i++)
         {
             trans = RotateBits(trans, size, 1, false);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+            if (verifyMask(trans, mask, RGB, n_pixels, seed))
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    *(encryptedImage + j) = *(trans + j); // Actualiza los datos
+                }
+                return i;
+            }
         }
         trans = encryptedImage;
-        for(int i = 21; i < 28; i++)
+        for (int i = 21; i < 28; i++)
         {
             trans = ShiftBits(trans, size, 1, true);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+            if (verifyMask(trans, mask, RGB, n_pixels, seed))
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    *(encryptedImage + j) = *(trans + j); // Actualiza los datos
+                }
+                return i;
+            }
         }
         trans = encryptedImage;
-        for(int i = 31; i < 38; i++)
+        for (int i = 31; i < 38; i++)
         {
             trans = ShiftBits(trans, size, 1, false);
-            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+            if (verifyMask(trans, mask, RGB, n_pixels, seed))
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    *(encryptedImage + j) = *(trans + j); // Actualiza los datos
+                }
+                return i;
+            }
         }
     }
     return -1;
 }
 
-bool decryptImage()
+bool decryptImage(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed)
 {
-    //
+    while()
+    {
+        //veriftrans(RGB?,seed?)
+    }
 }
