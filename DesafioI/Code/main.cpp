@@ -409,6 +409,7 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM, unsig
         {
             *(encryptedImage + i) = *(trans + i); // Copia los datos usando punteros
         }
+        cout << "XOR" << endl;
         return 0;
     }
     else
@@ -423,6 +424,7 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM, unsig
                 {
                     *(encryptedImage + j) = *(trans + j); // Actualiza los datos
                 }
+                cout << "Rotacion " << i << " bits a la Izquierda" << endl;
                 return i;
             }
         }
@@ -436,6 +438,7 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM, unsig
                 {
                     *(encryptedImage + j) = *(trans + j); // Actualiza los datos
                 }
+                cout << "Rotacion " << i-10 << " bits a la Derecha" << endl;
                 return i;
             }
         }
@@ -449,6 +452,7 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM, unsig
                 {
                     *(encryptedImage + j) = *(trans + j); // Actualiza los datos
                 }
+                cout << "Shift " << i-20 << " bits a la Izquierda" << endl;
                 return i;
             }
         }
@@ -462,6 +466,7 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM, unsig
                 {
                     *(encryptedImage + j) = *(trans + j); // Actualiza los datos
                 }
+                cout << "Shift " << i-30 << " bits a la Derecha" << endl;
                 return i;
             }
         }
