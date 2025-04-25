@@ -362,24 +362,28 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsign
     if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return 0; }
     else
     {
+        trans = encryptedImage;
         for(int i = 1; i < 8; i++)
         {
-            trans = RotateBits(encryptedImage, size, 1, true);
+            trans = RotateBits(trans, size, 1, true);
             if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
         }
+        trans = encryptedImage;
         for(int i = 11; i < 18; i++)
         {
-            trans = RotateBits(encryptedImage, size, 1, false);
+            trans = RotateBits(trans, size, 1, false);
             if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
         }
+        trans = encryptedImage;
         for(int i = 21; i < 28; i++)
         {
-            trans = ShiftBits(encryptedImage, size, 1, true);
+            trans = ShiftBits(trans, size, 1, true);
             if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
         }
+        trans = encryptedImage;
         for(int i = 31; i < 38; i++)
         {
-            trans = ShiftBits(encryptedImage, size, 1, false);
+            trans = ShiftBits(trans, size, 1, false);
             if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
         }
     }
