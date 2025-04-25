@@ -18,6 +18,7 @@ unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size);
 unsigned char* ShiftImagePixels(const unsigned char* img, int size, int seed); // Desplazamiento cíclico de píxeles
 
 bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned int* RGB, int &n_pixels, int &seed);
+int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed);
 
 
 
@@ -70,88 +71,77 @@ int main() {
         return -1;
     }
     sizeIO = widthIO * heightIO * 3; // Calcular tamaño una vez
-
+    // cargar semilla y máscara
+    int seed = 0, n_pixels = 0;
+    unsigned int* RGB = loadSeedMasking(archivoM1_path, seed, n_pixels);
+    if (!RGB) {
+        cout << "Error al cargar la semilla y la máscara." << endl;
+        delete[] IO; delete[] IM; delete[] M;
+        return -1;
+    }
     cout << "--- Iniciando Proceso (Caso 1) ---" << endl;
-
-    // --- Paso 1 (Adelante): P1 = IO XOR IM ---
-    cout << "Calculando P1 = IO XOR IM..." << endl;
-    unsigned char* P1 = XOR(IO, IM, sizeIO);
-    if (!P1) { cout << "Error calculando P1." << endl; /* Limpiar y salir */ delete[] IO; delete[] IM; delete[] M; return -1; }
-    cout << "P1 calculado." << endl;
-
-    // --- Verificación de P1 usando M1.txt ---
-    cout << "Verificando P1 con M1.txt..." << endl;
-    int seed1 = 0, n_pixels1 = 0;
-    unsigned int* data1 = loadSeedMasking(archivoM1_path, seed1, n_pixels1);
-    bool paso1_verificado = false;
-    if (data1) {
-        // Llamar a la función de verificación
-        paso1_verificado = verifyMask(P1, M, data1, n_pixels1, seed1);
-        cout << "Resultado de la verificacion de P1 con M1.txt: " << (paso1_verificado ? "EXITOSA" : "FALLIDA") << endl;
-        delete[] data1; // Liberar memoria de data1
+    int paso1_verificado = 0;
+    paso1_verificado = verifyTransformation(IO, IM, M, RGB, sizeIO, n_pixels, seed);
+    if (paso1_verificado == -1) {
+        cout << "Error: La verificación de transformación falló." << endl;
+        delete[] IO; delete[] IM; delete[] M;
+        return -1;
+    } else if (paso1_verificado == 0) {
+        cout << "La transformación XOR fue verificada correctamente." << endl;
+    } else if (paso1_verificado < 8) {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado << " bits a la izquierda." << endl;
+    } else if (paso1_verificado < 18) {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado - 10 << " bits a la derecha." << endl;
+    } else if (paso1_verificado < 28) {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado - 20 << " bits a la izquierda." << endl;
     } else {
-        cout << "Error: No se pudieron cargar los datos de M1.txt para la verificacion." << endl;
-        // Considerar si continuar o no si la verificación es crucial
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso1_verificado - 30 << " bits a la derecha." << endl;
     }
-
-    // (Opcional) Comparar P1 con imagen de referencia P1.bmp
-    // unsigned char* P1Ref = loadPixels(archivoP1Ref_q, widthIO, heightIO);
-    // if (P1Ref) {
-    //     cout << "Comparacion de P1 calculado vs P1.bmp: " << (compareImages(P1, P1Ref, widthIO, heightIO) ? "IGUALES" : "DIFERENTES") << endl;
-    //     delete[] P1Ref;
-    // }
-
-    // --- Paso 2 (Adelante): P2 = RotateRight(P1, 3) ---
-    cout << "Calculando P2 = RotateRight(P1, 3)..." << endl;
-    unsigned char* P2 = RotateBits(P1, sizeIO, 3, false); // false = derecha
-    if (!P2) { cout << "Error calculando P2." << endl; /* Limpiar y salir */ delete[] IO; delete[] IM; delete[] M; delete[] P1; return -1; }
-    cout << "P2 calculado." << endl;
-
-    // --- Verificación de P2 usando M2.txt ---
-    cout << "Verificando P2 con M2.txt..." << endl;
+    // --- Guardar transformacion correcta para la siguiente ---
+    unsigned char* transformedImage = XOR(IM, IO, sizeIO);
+    unsigned char* rotateimage = RotateBits(transformedImage, sizeIO, 3, false);
+    
+    // --- Caso 2: Cargar M2 y verificar ---
     int seed2 = 0, n_pixels2 = 0;
-    unsigned int* data2 = loadSeedMasking(archivoM2_path, seed2, n_pixels2);
-    bool paso2_verificado = false;
-    if (data2) {
-        paso2_verificado = verifyMask(P2, M, data2, n_pixels2, seed2);
-        cout << "Resultado de la verificacion de P2 con M2.txt: " << (paso2_verificado ? "EXITOSA" : "FALLIDA") << endl;
-        delete[] data2;
+    unsigned int* RGB2 = loadSeedMasking(archivoM2_path, seed2, n_pixels2);
+    
+    if (!RGB2) {
+        cout << "Error al cargar la semilla y la máscara de M2." << endl;
+        return -1;
+    }
+    cout << "Semilla de M2: " << seed2 << endl;
+    cout << "Cantidad de píxeles leídos de M2: " << n_pixels2 << endl;
+    bool verificacion = verifyMask(rotateimage, M, RGB2, n_pixels2, seed2);
+    if (!verificacion) {
+        cout << "Error: La verificación de la máscara falló." << endl;
+        delete[] IO; delete[] IM; delete[] M;
+        return -1;
     } else {
-        cout << "Error: No se pudieron cargar los datos de M2.txt para la verificacion." << endl;
+        cout << "La verificación de la máscara fue exitosa." << endl;
+    }
+    cout << "--- Iniciando Proceso (Caso 2) ---" << endl;
+    int paso2_verificado = 0;
+    paso2_verificado = verifyTransformation(transformedImage, IM, M, RGB2, sizeIO, n_pixels2, seed2);
+    if (paso2_verificado == -1) {
+        cout << "Error: La verificación de transformación falló." << endl;
+        delete[] IO; delete[] IM; delete[] M;
+        return -1;
+    } else if (paso2_verificado == 0) {
+        cout << "La transformación XOR fue verificada correctamente." << endl;
+    } else if (paso2_verificado < 8) {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado << " bits a la izquierda." << endl;
+    } else if (paso2_verificado < 18) {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado - 10 << " bits a la derecha." << endl;
+    } else if (paso2_verificado < 28) {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado - 20 << " bits a la izquierda." << endl;
+    } else {
+        cout << "La transformación fue verificada correctamente con un desplazamiento de " << paso2_verificado - 30 << " bits a la derecha." << endl;
     }
 
-    // (Opcional) Comparar P2 con imagen de referencia P2.bmp
-    // unsigned char* P2Ref = loadPixels(archivoP2Ref_q, widthIO, heightIO);
-    // if (P2Ref) {
-    //     cout << "Comparacion de P2 calculado vs P2.bmp: " << (compareImages(P2, P2Ref, widthIO, heightIO) ? "IGUALES" : "DIFERENTES") << endl;
-    //     delete[] P2Ref;
-    // }
 
-    // --- Paso 3 (Adelante): P3 = P2 XOR IM ---
-    cout << "Calculando P3 = P2 XOR IM..." << endl;
-    unsigned char* P3 = XOR(P2, IM, sizeIO);
-    if (!P3) { cout << "Error calculando P3." << endl; /* Limpiar y salir */ delete[] IO; delete[] IM; delete[] M; delete[] P1; delete[] P2; return -1; }
-    cout << "P3 calculado (equivalente a I_D)." << endl;
 
-    // (Opcional) Comparar P3 con imagen de referencia I_D.bmp
-    unsigned char* P3Ref = loadPixels(archivoP3Ref_q, widthIO, heightIO);
-     if (P3Ref) {
-         cout << "Comparacion de P3 calculado vs I_D.bmp: " << (compareImages(P3, P3Ref, widthIO, heightIO) ? "IGUALES" : "DIFERENTES") << endl;
-         delete[] P3Ref;
-     }
 
-    // --- Limpieza Final ---
-    cout << "Limpiando memoria..." << endl;
-    delete[] IO;
-    delete[] IM;
-    delete[] M;
-    delete[] P1;
-    delete[] P2;
-    delete[] P3;
-    // Asegurarse que P1Ref, P2Ref, P3Ref se borren si se cargaron
-
-    cout << "Programa terminado." << endl;
-    return 0;
+   
 }
 
 // --- Implementaciones de Funciones ---
@@ -354,4 +344,49 @@ bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned 
     }
     cout << "Verificación de la máscara exitosa." << endl;
     return true; // La verificación fue exitosa
+}
+
+
+int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed)
+{
+    cout << "Verificando transformación..." << endl;
+    cout << "Semilla: " << seed << endl;
+    cout << "Cantidad de píxeles: " << n_pixels << endl;
+    cout << "Tamaño de la imagen: " << size << endl;
+    cout << "Tamaño de la máscara: " << n_pixels * 3 << endl;
+    
+    unsigned char* trans = XOR(encryptedImage, IM, size);
+    if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return 0; }
+    else
+    {
+        trans = encryptedImage;
+        for(int i = 1; i < 8; i++)
+        {
+            
+            trans = RotateBits(trans, size, 1, true);
+            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+        }
+        trans = encryptedImage;
+        for(int i = 11; i < 18; i++)
+        {
+            
+            trans = RotateBits(trans, size, 1, false);
+            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+        }
+        trans = encryptedImage;
+        for(int i = 21; i < 28; i++)
+        {
+            
+            trans = ShiftBits(trans, size, 1, true);
+            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+        }
+        trans = encryptedImage;
+        for(int i = 31; i < 38; i++)
+        {
+            
+            trans = ShiftBits(trans, size, 1, false);
+            if(verifyMask(trans, mask, RGB, n_pixels, seed)){ return i; }
+        }
+    }
+    return -1;
 }
