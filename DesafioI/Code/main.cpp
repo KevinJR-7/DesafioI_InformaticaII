@@ -18,6 +18,7 @@ unsigned char* XOR(unsigned char* img1, unsigned char* img2, int size);
 unsigned char* ShiftImagePixels(const unsigned char* img, int size, int seed); // Desplazamiento cíclico de píxeles
 
 bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned int* RGB, int &n_pixels, int &seed);
+int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsigned char* mask, unsigned int* RGB, int &size, int &n_pixels, int &seed);
 
 
 
@@ -388,4 +389,9 @@ int verifyTransformation(unsigned char* encryptedImage, unsigned char* IM,unsign
         }
     }
     return -1;
+}
+
+bool decryptImage()
+{
+    //
 }
