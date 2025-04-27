@@ -11,8 +11,6 @@
 
 using namespace std;
 
-
-
 int main() {
     
     QString FileEntrada = "../data/I_D.bmp";
@@ -20,18 +18,17 @@ int main() {
     QString FileIM = "../data/I_M.bmp";
     QString FileMask = "../data/M.bmp"; // File de máscara inicial
     
-    int Mtxt = 7;  // Número de Files de máscara a procesar
+    unsigned int Mtxt = 7;  // Número de Files de máscara a procesar
 
     // --- Variables ---
     unsigned char *ID = nullptr, *IM = nullptr, *M = nullptr;
     unsigned char *currentImage = nullptr; // Imagen en la etapa actual del descifrado
     unsigned char *previousImage = nullptr; // Resultado de aplicar la inversa
     unsigned int *data_i = nullptr; // Datos del File Mi.txt
-    int width = 0, height = 0, size = 0;
-    int mWidth = 0, mHeight = 0;
-    int Mwidth = 0, Mheight = 0;
+    int width = 0, height = 0, size = 0; // Tamaño ID
+    int mWidth = 0, mHeight = 0; // Tamaño IM
+    int Mwidth = 0, Mheight = 0; // Tamaño Máscara
     bool decryption_successful = false;
-    unsigned char* IO_final = nullptr; // Puntero al resultado final
 
     
     // --- cargar imagenes base ---
@@ -53,12 +50,11 @@ int main() {
         data_i = loadSeedMasking(nombreFile.c_str(), seedi, n_pixelsi); // Cargar la semilla y los datos de enmascaramiento
         int transformacion = verifyTransformation(currentImage, IM, M, data_i, size, n_pixelsi, seedi); // Verificar la transformación
         delete [] data_i; // Liberar memoria de los datos de enmascaramiento
+        data_i = nullptr;
         cout << seedi << " SEMilllllaaaaaaaaa" << endl;
         cout << n_pixelsi <<  "N pixelssssssssss 0" << endl;
-        data_i = nullptr; // Reiniciar puntero para evitar uso posterior
         previousImage = nullptr;
 
-        
         switch (transformacion) {
             case 0:
                 previousImage = XOR(currentImage, IM, size); // Aplicar XOR
@@ -76,33 +72,23 @@ int main() {
                 break;
             default:
                 cout << "Error: Transformacion no reconocida." << endl;
-                return -1; // Salir si la transformación no es válida
-            
-            
-            
+                return -1; // Salir si la transformación no es válida   
         }
         if (!previousImage) {
             cout << "Error: previousImage no está inicializado." << endl;
             return -1;
         }
         if (currentImage != ID) {
-            delete[] currentImage; // Liberar memoria de la imagen anterior
+            delete[] currentImage;
         }
-        currentImage = previousImage; // Actualizar currentImage con el resultado de XOR
-        cout << "Etapa" << i << "completada." << endl;
-        
-
-
-
-
-
-
+        currentImage = previousImage; // Actualizar currentImage con el resultado de la transformación
+        cout << "Etapa " << i << " completada." << endl;
     }
-    IO_final = currentImage; // Guardar el resultado final
+
     decryption_successful = true; // Marcar como exitoso
     cout << "Desencriptacion exitosa." << endl;
     cout << "Guardando imagen desencriptada..." << endl;
-    if (!exportImage(IO_final, width, height, outputFile)) {
+    if (!exportImage(currentImage, width, height, outputFile)) {
         cout << "Error al guardar la imagen desencriptada." << endl;
         decryption_successful = false; // Marcar como fallido
     } else {
@@ -110,14 +96,11 @@ int main() {
     }
     return decryption_successful ? 0 : -1; // Retornar el resultado de la desencriptación
 
-
-
     //limpiar
     delete[] ID; // Liberar memoria de la imagen original
     delete[] IM; // Liberar memoria de la imagen de enmascaramiento
     delete[] M; // Liberar memoria de la imagen de máscara inicial
     delete[] currentImage; // Liberar memoria de la imagen actual
     delete[] previousImage; // Liberar memoria de la imagen anterior
-
 }
 
