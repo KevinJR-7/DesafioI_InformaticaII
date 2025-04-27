@@ -5,6 +5,41 @@
 #include <QString>
 
 using namespace std;
+
+/**
+ * @brief Loads the base images required for the decryption process.
+ * 
+ * This function loads three images from the specified files:
+ * - Distorted image (ID)
+ * - Masking image (IM)
+ * - Initial mask image (M)
+ * 
+ * The images are loaded into memory as arrays of bytes (unsigned char*).
+ * Their dimensions (width and height) are also retrieved.
+ * 
+ * @param InputFile Path to the distorted image file (I_D.bmp).
+ * @param fileIM Path to the masking image file (I_M.bmp).
+ * @param fileMask Path to the initial mask image file (M.bmp).
+ * @param ID Reference to the pointer where the loaded distorted image will be stored.
+ * @param IM Reference to the pointer where the loaded masking image will be stored.
+ * @param M Reference to the pointer where the loaded initial mask image will be stored.
+ * @param width Reference where the width of the distorted image will be stored.
+ * @param height Reference where the height of the distorted image will be stored.
+ * @param mWidth Reference where the width of the masking image will be stored.
+ * @param mHeight Reference where the height of the masking image will be stored.
+ * @param Mwidth Reference where the width of the initial mask image will be stored.
+ * @param Mheight Reference where the height of the initial mask image will be stored.
+ * 
+ * @return true if all images were successfully loaded, false otherwise.
+ * 
+ * @note The user is responsible for freeing the allocated memory for the images after use.
+ */
+bool LoadImages(QString InputFile, QString fileIM, QString fileMask,
+    unsigned char*& ID, unsigned char*& IM, unsigned char*& M,
+    int& width, int& height, int& mWidth, int& mHeight, int& Mwidth, int& Mheight);
+
+
+
 /**
  * @brief Load a BMP image and convert it to an array of pixels in RGB888 format.
  * 
@@ -44,6 +79,25 @@ unsigned char* loadPixels(QString input, int &width, int &height);
  * @warning If the pixel data or dimensions are not valid, or if an error occurs while saving the image, the function returns `false`. 
  */
 bool exportImage(unsigned char* pixelData, int width, int height, QString outputFile);
+
+/**
+ * @brief Saves the final image to a specified file.
+ * 
+ * This function takes the final image data, width, height, and output file path,
+ * and saves the image to the specified output file using the `exportImage` function.
+ * If saving fails, an error message is displayed.
+ * 
+ * @param finalFile Pointer to the final image data (pixel data in memory).
+ * @param width The width of the image.
+ * @param height The height of the image.
+ * @param outputFile The path where the image should be saved.
+ * 
+ * @return `true` if the image is saved successfully, `false` if an error occurred.
+ * 
+ * @note This function uses the `exportImage` function to handle the actual saving process.
+ */
+bool saveFinalFile(unsigned char* finalFile, int width, int height, QString outputFile);
+
 
 /**
  * @brief Generates the filename for a mask file based on the given index.
