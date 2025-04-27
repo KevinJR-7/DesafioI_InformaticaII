@@ -83,7 +83,7 @@ int main() {
             case 5:
             case 6:
             case 7:
-                previousImage = RotateBits(currentImage, size, 8 - transformacion, true); // Rotar bits a la izquierda
+                previousImage = RotateBits(currentImage, size, 8 - transformacion, true); // Rotar bits a la derecha
                 cout << "Transformacion rotacion de" << transformacion << " bits a la izquierda." << endl;
                 break;
             case 11:
@@ -95,26 +95,6 @@ int main() {
             case 17:
                 previousImage = RotateBits(currentImage, size, transformacion - 10, false); // Rotar bits a la derecha
                 cout << "Transformacion rotacion de" << transformacion - 10 << " bits a la derecha." << endl;
-                break;
-            case 21:
-            case 22:
-            case 23:
-            case 24:
-            case 25:
-            case 26:
-            case 27:
-                previousImage = ShiftBits(currentImage, size, transformacion - 20, true); // Desplazar bits a la izquierda
-                cout << "Transformacion desplazamiento de" << transformacion - 20 << " bits a la izquierda." << endl;
-                break;
-            case 31:
-            case 32:
-            case 33:
-            case 34:
-            case 35:
-            case 36:
-            case 37:
-                previousImage = ShiftBits(currentImage, size, transformacion - 30, false); // Desplazar bits a la derecha
-                cout << "Transformacion desplazamiento de" << transformacion - 30 << " bits a la derecha." << endl;
                 break;
             default:
                 cout << "Error: Transformacion no reconocida." << endl;
@@ -333,23 +313,7 @@ bool compareImages(unsigned char *img1, unsigned char *img2, int width, int heig
     return true;
 }
 
-// Implementación de ShiftBits (desplazamiento de bits, ya la tenías)
-unsigned char* ShiftBits(unsigned char *img, int size, int bits, bool direction) {
-    if (img == nullptr || size <= 0 || bits < 0 || bits > 7) return nullptr;
-    unsigned char* resultado = new unsigned char[size]; // Sin nothrow
-    if (bits == 0) { // Optimización para no desplazamiento
-        for(int k = 0; k < size; ++k) { resultado[k] = img[k]; } // Copia manual
-        return resultado;
-    }
-    for (int i = 0; i < size; ++i) {
-        if (direction) { // Izquierda
-            resultado[i] = img[i] << bits;
-        } else { // Derecha
-            resultado[i] = img[i] >> bits;
-        }
-    }
-    return resultado;
-}
+
 bool verifyMask (unsigned char* transformedImage, unsigned char* mask, unsigned int* RGB, int &n_pixels, int &seed){
 
     for (int k = 0; k < n_pixels * 3; k++) {
