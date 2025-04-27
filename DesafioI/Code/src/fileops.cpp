@@ -2,6 +2,27 @@
 #include <iostream>
 #include <QImage>
 using namespace std;
+
+
+
+bool LoadImages(QString InputFile, QString fileIM, QString fileMask,
+    unsigned char*& ID, unsigned char*& IM, unsigned char*& M,
+    int& width, int& height, int& mWidth, int& mHeight, int& Mwidth, int& Mheight) {
+
+ID = loadPixels(InputFile, width, height);
+IM = loadPixels(fileIM, mWidth, mHeight);
+M = loadPixels(fileMask, Mwidth, Mheight);
+
+if (!ID || !IM || !M) {
+    cout << "Error to load images." << endl;
+    return false;
+}
+cout << "Images loaded." << endl;
+return true;
+}
+
+
+
 unsigned char* loadPixels(QString input, int &width, int &height) {
     QImage imagen(input);
     if (imagen.isNull()) {
@@ -60,6 +81,16 @@ string FileM(int indice, int totalFiles) {
         return "";  // Retorna una cadena vacía si el índice no es válido
     }
 }
+
+bool saveFinalFile(unsigned char* finalFile, int width, int height, QString outputFile) {
+    if (!exportImage(finalFile, width, height, outputFile)) {
+        cout << "Error to save the final image." << endl;
+        return false;
+    }
+    cout << "Image saved: " << outputFile.toStdString() << endl;
+    return true;
+}
+
 
 
 bool compareImages(unsigned char *img1, unsigned char *img2, int width, int height) {

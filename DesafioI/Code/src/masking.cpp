@@ -37,8 +37,6 @@ unsigned int* loadSeedMasking(const char* Filename, int &seed, int &n_pixels) {
     }
 
     File.close();
-    cout << "Seed: " << seed << endl;
-    cout << "Count of pixels read: " << n_pixels << endl;
 
     return RGB;
 }
@@ -47,10 +45,9 @@ bool verifyMask(unsigned char* transformedImage, unsigned char* mask, unsigned i
     for (int k = 0; k < n_pixels * 3; k++) {
         int result = RGB[k] - mask[k];
         if (result != transformedImage[seed + k]) {
-            cout << "Error en la verificación de la máscara en el píxel " << k << endl;
             return false;
         }
     }
-    cout << "Verificación de la máscara exitosa." << endl;
+    /* cout << "Verificacion de la mascara exitosa." << endl; */ // Debug
     return true;
 }
