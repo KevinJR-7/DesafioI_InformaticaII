@@ -1,0 +1,6 @@
+var searchData=
+[
+  ['loadimages_0',['LoadImages',['../fileops_8h.html#a2442b5565f9d53c6f84e76245158eb61',1,'LoadImages(QString InputFile, QString fileIM, QString fileMask, unsigned char *&amp;ID, unsigned char *&amp;IM, unsigned char *&amp;M, int &amp;width, int &amp;height, int &amp;mWidth, int &amp;mHeight, int &amp;Mwidth, int &amp;Mheight):&#160;fileops.cpp'],['../fileops_8cpp.html#a2442b5565f9d53c6f84e76245158eb61',1,'LoadImages(QString InputFile, QString fileIM, QString fileMask, unsigned char *&amp;ID, unsigned char *&amp;IM, unsigned char *&amp;M, int &amp;width, int &amp;height, int &amp;mWidth, int &amp;mHeight, int &amp;Mwidth, int &amp;Mheight):&#160;fileops.cpp']]],
+  ['loadpixels_1',['loadPixels',['../fileops_8h.html#a245e7300bc474a2daf4a1371541d85cb',1,'loadPixels(QString input, int &amp;width, int &amp;height):&#160;fileops.cpp'],['../fileops_8cpp.html#a245e7300bc474a2daf4a1371541d85cb',1,'loadPixels(QString input, int &amp;width, int &amp;height):&#160;fileops.cpp']]],
+  ['loadseedmasking_2',['loadSeedMasking',['../masking_8h.html#a01604aac272b92b723f70160a2bbbaa9',1,'loadSeedMasking(const char *Filename, int &amp;seed, int &amp;n_pixels):&#160;masking.cpp'],['../masking_8cpp.html#a01604aac272b92b723f70160a2bbbaa9',1,'loadSeedMasking(const char *Filename, int &amp;seed, int &amp;n_pixels):&#160;masking.cpp']]]
+];
